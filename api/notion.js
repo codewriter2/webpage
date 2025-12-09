@@ -1,10 +1,10 @@
-// api/notion.js
 const { Client } = require("@notionhq/client");
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
 });
 
+// 리치 텍스트 → HTML 변환 간단 버전
 function richTextToPlain(richTexts = []) {
   return richTexts
     .map((t) =>
@@ -13,12 +13,12 @@ function richTextToPlain(richTexts = []) {
     .join("");
 }
 
+// 블록 → HTML 변환
 function blockToHtml(block) {
   const type = block.type;
 
   if (type === "paragraph") {
     const text = richTextToPlain(block.paragraph.rich_text);
-    if (!text) return "";
     return `<p>${text}</p>`;
   }
 
@@ -42,8 +42,7 @@ function blockToHtml(block) {
     return `<li>${text}</li>`;
   }
 
-  // 필요하면 numbered_list_item, quote, code 등 계속 추가 가능
-  return "";
+  return ""; // 추가 블록 타입은 추후 확장 가능
 }
 
 async function getBlocksHtml(pageId) {
@@ -63,6 +62,7 @@ async function getBlocksHtml(pageId) {
     cursor = response.next_cursor;
   }
 
+  // HTML 조합
   return blocks.map(blockToHtml).join("");
 }
 
@@ -78,10 +78,7 @@ module.exports = async (req, res) => {
     const html = await getBlocksHtml(pageId);
     res.status(200).json({ html });
   } catch (err) {
-    console.error(err.body || err);
-    res
-      .status(500)
-      .json({ error: "Failed to load Notion content" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to load Notion content" });
   }
 };
-
